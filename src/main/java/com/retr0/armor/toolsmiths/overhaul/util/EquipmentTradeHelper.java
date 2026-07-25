@@ -253,11 +253,7 @@ public class EquipmentTradeHelper {
 
     public static boolean isWeapon(String path) {
         return path.endsWith("_sword") ||
-               path.endsWith("_axe") ||
-               path.equals("bow") ||
-               path.equals("crossbow") ||
-               path.equals("trident") ||
-               path.equals("mace");
+               path.endsWith("_axe");
     }
 
     private static Item getMaterialItem(Item item) {
