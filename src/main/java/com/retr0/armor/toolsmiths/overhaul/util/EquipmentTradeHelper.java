@@ -195,9 +195,6 @@ public class EquipmentTradeHelper {
             currentModifiers = currentModifiers.withModifierAdded(Attributes.BLOCK_INTERACTION_RANGE,
                     new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_reach"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
                     EquipmentSlotGroup.MAINHAND);
-            currentModifiers = currentModifiers.withModifierAdded(Attributes.LUCK,
-                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_luck"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
-                    EquipmentSlotGroup.MAINHAND);
         } else if (path.endsWith("_shovel")) {
             currentModifiers = currentModifiers.withModifierAdded(Attributes.MINING_EFFICIENCY,
                     new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_mining"), 0.05D, AttributeModifier.Operation.ADD_MULTIPLIED_BASE),
@@ -214,9 +211,6 @@ public class EquipmentTradeHelper {
                     EquipmentSlotGroup.MAINHAND);
             currentModifiers = currentModifiers.withModifierAdded(Attributes.ENTITY_INTERACTION_RANGE,
                     new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_entity_reach"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
-                    EquipmentSlotGroup.MAINHAND);
-            currentModifiers = currentModifiers.withModifierAdded(Attributes.LUCK,
-                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_luck"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
                     EquipmentSlotGroup.MAINHAND);
         } else if (path.endsWith("_sword")) {
             currentModifiers = currentModifiers.withModifierAdded(Attributes.ATTACK_DAMAGE,
