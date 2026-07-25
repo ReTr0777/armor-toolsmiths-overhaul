@@ -64,15 +64,10 @@ public class EquipmentTradeHelper {
         return offer.getItemCostA().item().value() == Items.EMERALD;
     }
 
-    public static int getEnchantmentLevelCost(ItemStack stack) {
+    public static int getTotalEnchantmentLevels(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return 0;
 
         int totalLevels = 0;
-
-        // Include prior anvil work penalty if present
-        totalLevels += Math.min(5, stack.getOrDefault(DataComponents.REPAIR_COST, 0));
-
-        // Sum enchantment levels (e.g. Protection IV = 4, Swift Sneak III = 3 -> 7 levels)
         ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
         if (!enchantments.isEmpty()) {
             for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
@@ -88,7 +83,7 @@ public class EquipmentTradeHelper {
         Item materialItem = getMaterialItem(item);
         
         int baseCount = getBaseMaterialCount(item);
-        int enchantLevels = getEnchantmentLevelCost(equipmentStack);
+        int enchantLevels = getTotalEnchantmentLevels(equipmentStack);
         int extraCost = enchantLevels * 2;
         int count = Math.min(64, baseCount + extraCost);
 
