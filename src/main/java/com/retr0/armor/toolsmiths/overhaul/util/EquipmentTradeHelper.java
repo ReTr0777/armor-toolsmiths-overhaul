@@ -64,16 +64,31 @@ public class EquipmentTradeHelper {
         return offer.getItemCostA().item().value() == Items.EMERALD;
     }
 
-    public static int getTotalEnchantmentLevels(ItemStack stack) {
+    public static int getAnvilLevelCost(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return 0;
-        ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
-        if (enchantments.isEmpty()) return 0;
 
-        int totalLevels = 0;
-        for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
-            totalLevels += entry.getIntValue();
+        int totalAnvilCost = 0;
+
+        // Add prior work penalty (anvil repair cost) if present
+        totalAnvilCost += stack.getOrDefault(DataComponents.REPAIR_COST, 0);
+
+        // Add enchantment anvil costs
+        ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        if (!enchantments.isEmpty()) {
+            for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
+                Enchantment enchantment = entry.getKey().value();
+                int level = entry.getIntValue();
+
+                int anvilMultiplier = enchantment.getAnvilCost();
+                if (anvilMultiplier <= 0) {
+                    anvilMultiplier = 1;
+                }
+
+                totalAnvilCost += anvilMultiplier * level;
+            }
         }
-        return totalLevels;
+
+        return totalAnvilCost;
     }
 
     public static MerchantOffer createOrderOffer(ItemStack equipmentStack) {
@@ -81,8 +96,8 @@ public class EquipmentTradeHelper {
         Item materialItem = getMaterialItem(item);
         
         int baseCount = getBaseMaterialCount(item);
-        int totalEnchantmentLevels = getTotalEnchantmentLevels(equipmentStack);
-        int extraCost = totalEnchantmentLevels * 2;
+        int anvilLevels = getAnvilLevelCost(equipmentStack);
+        int extraCost = anvilLevels * 2;
         int count = Math.min(64, baseCount + extraCost);
 
         ItemStack sellStack = equipmentStack.copy();
