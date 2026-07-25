@@ -46,23 +46,41 @@ public abstract class VillagerMixin extends AbstractVillager {
 
         if (EquipmentTradeHelper.isEquipmentForProfession(profession, heldItem)) {
             if (!this.level().isClientSide()) {
-                MerchantOffer offer = EquipmentTradeHelper.createOrderOffer(heldItem);
                 MerchantOffers offers = this.getOffers();
 
                 if (offers != null) {
                     // Remove default equipment sell trades if any remain
                     offers.removeIf(EquipmentTradeHelper::isEquipmentSellOffer);
 
-                    // Remove existing identical custom trade if present to avoid duplicate entries
-                    offers.removeIf(o -> ItemStack.isSameItemSameComponents(o.getResult(), offer.getResult()));
+                    // Find index of existing trade for this item
+                    int existingIndex = -1;
+                    for (int i = 0; i < offers.size(); i++) {
+                        if (ItemStack.isSameItemSameComponents(offers.get(i).getResult(), heldItem)) {
+                            existingIndex = i;
+                            break;
+                        }
+                    }
 
-                    // Insert custom order offer at top of tradelist
-                    offers.add(0, offer);
-                }
+                    if (existingIndex != -1) {
+                        // Re-order existing trade
+                        MerchantOffer existingOffer = offers.remove(existingIndex);
+                        if (existingIndex == 0 && offers.size() > 0) {
+                            // Already at top: shift down to position 1
+                            offers.add(1, existingOffer);
+                        } else {
+                            // Move to top (position 0)
+                            offers.add(0, existingOffer);
+                        }
+                    } else {
+                        // New order offer
+                        MerchantOffer offer = EquipmentTradeHelper.createOrderOffer(heldItem);
+                        offers.add(0, offer);
 
-                // Consume 1 item from player unless in Creative
-                if (!player.getAbilities().instabuild) {
-                    heldItem.shrink(1);
+                        // Consume 1 item from player unless in Creative
+                        if (!player.getAbilities().instabuild) {
+                            heldItem.shrink(1);
+                        }
+                    }
                 }
 
                 // Villager happy effects
