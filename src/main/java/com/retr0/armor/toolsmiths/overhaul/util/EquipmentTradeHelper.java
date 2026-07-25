@@ -64,31 +64,23 @@ public class EquipmentTradeHelper {
         return offer.getItemCostA().item().value() == Items.EMERALD;
     }
 
-    public static int getAnvilLevelCost(ItemStack stack) {
+    public static int getEnchantmentLevelCost(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return 0;
 
-        int totalAnvilCost = 0;
+        int totalLevels = 0;
 
-        // Add prior work penalty (anvil repair cost) if present
-        totalAnvilCost += stack.getOrDefault(DataComponents.REPAIR_COST, 0);
+        // Include prior anvil work penalty if present
+        totalLevels += Math.min(5, stack.getOrDefault(DataComponents.REPAIR_COST, 0));
 
-        // Add enchantment anvil costs
+        // Sum enchantment levels (e.g. Protection IV = 4, Swift Sneak III = 3 -> 7 levels)
         ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
         if (!enchantments.isEmpty()) {
             for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
-                Enchantment enchantment = entry.getKey().value();
-                int level = entry.getIntValue();
-
-                int anvilMultiplier = enchantment.getAnvilCost();
-                if (anvilMultiplier <= 0) {
-                    anvilMultiplier = 1;
-                }
-
-                totalAnvilCost += anvilMultiplier * level;
+                totalLevels += entry.getIntValue();
             }
         }
 
-        return totalAnvilCost;
+        return totalLevels;
     }
 
     public static MerchantOffer createOrderOffer(ItemStack equipmentStack) {
@@ -96,8 +88,8 @@ public class EquipmentTradeHelper {
         Item materialItem = getMaterialItem(item);
         
         int baseCount = getBaseMaterialCount(item);
-        int anvilLevels = getAnvilLevelCost(equipmentStack);
-        int extraCost = anvilLevels * 2;
+        int enchantLevels = getEnchantmentLevelCost(equipmentStack);
+        int extraCost = enchantLevels * 2;
         int count = Math.min(64, baseCount + extraCost);
 
         ItemStack sellStack = equipmentStack.copy();
