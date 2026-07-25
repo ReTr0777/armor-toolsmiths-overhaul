@@ -35,7 +35,7 @@ public abstract class VillagerMixin extends AbstractVillager {
     private void removeEquipmentTrades(ServerLevel serverLevel, CallbackInfo ci) {
         MerchantOffers offers = this.getOffers();
         if (offers != null && !offers.isEmpty()) {
-            offers.removeIf(EquipmentTradeHelper::isEquipmentSellOffer);
+            offers.removeIf(EquipmentTradeHelper::isDefaultEquipmentSellOffer);
         }
     }
 
@@ -49,10 +49,10 @@ public abstract class VillagerMixin extends AbstractVillager {
                 MerchantOffers offers = this.getOffers();
 
                 if (offers != null) {
-                    // Remove default equipment sell trades if any remain
-                    offers.removeIf(EquipmentTradeHelper::isEquipmentSellOffer);
+                    // Remove default emerald equipment trades if any remain
+                    offers.removeIf(EquipmentTradeHelper::isDefaultEquipmentSellOffer);
 
-                    // Find index of existing trade for this item
+                    // Find index of existing custom trade for this specific item
                     int existingIndex = -1;
                     for (int i = 0; i < offers.size(); i++) {
                         if (ItemStack.isSameItemSameComponents(offers.get(i).getResult(), heldItem)) {
@@ -64,7 +64,7 @@ public abstract class VillagerMixin extends AbstractVillager {
                     if (existingIndex != -1) {
                         // Re-order existing trade
                         MerchantOffer existingOffer = offers.remove(existingIndex);
-                        if (existingIndex == 0 && offers.size() > 0) {
+                        if (existingIndex == 0 && offers.size() > 1) {
                             // Already at top: shift down to position 1
                             offers.add(1, existingOffer);
                         } else {
@@ -72,7 +72,7 @@ public abstract class VillagerMixin extends AbstractVillager {
                             offers.add(0, existingOffer);
                         }
                     } else {
-                        // New order offer
+                        // New order offer: add to top of tradelist alongside all previous custom orders
                         MerchantOffer offer = EquipmentTradeHelper.createOrderOffer(heldItem);
                         offers.add(0, offer);
 

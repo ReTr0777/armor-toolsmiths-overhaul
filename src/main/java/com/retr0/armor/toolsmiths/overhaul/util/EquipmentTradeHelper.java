@@ -42,7 +42,8 @@ public class EquipmentTradeHelper {
         return false;
     }
 
-    public static boolean isEquipmentSellOffer(MerchantOffer offer) {
+    public static boolean isDefaultEquipmentSellOffer(MerchantOffer offer) {
+        if (offer == null) return false;
         ItemStack result = offer.getResult();
         if (result.isEmpty()) return false;
 
@@ -51,7 +52,11 @@ public class EquipmentTradeHelper {
         if (itemId == null) return false;
         String path = itemId.getPath();
 
-        return isArmor(path) || isTool(path) || isWeapon(path) || path.equals("shield");
+        boolean isEquipment = isArmor(path) || isTool(path) || isWeapon(path) || path.equals("shield");
+        if (!isEquipment) return false;
+
+        // Default vanilla equipment trades always cost Emeralds for primary itemCostA
+        return offer.getItemCostA().item().value() == Items.EMERALD;
     }
 
     public static MerchantOffer createOrderOffer(ItemStack equipmentStack) {
