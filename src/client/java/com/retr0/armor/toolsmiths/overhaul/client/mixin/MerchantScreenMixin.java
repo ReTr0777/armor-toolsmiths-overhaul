@@ -1,6 +1,7 @@
 package com.retr0.armor.toolsmiths.overhaul.client.mixin;
 
 import com.retr0.armor.toolsmiths.overhaul.network.MoveTradePayload;
+import com.retr0.armor.toolsmiths.overhaul.network.RemoveTradePayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -34,12 +35,13 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
     }
 
     @Inject(method = "extractContents", at = @At("TAIL"))
-    private void renderTradeArrows(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    private void renderTradeControls(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         MerchantOffers offers = this.menu.getOffers();
         if (offers == null || offers.isEmpty()) return;
 
         Font font = this.font;
         int baseX = this.leftPos + 95;
+        int removeX = this.leftPos + 105;
         int baseY = this.topPos + 16;
 
         for (int i = 0; i < 7; i++) {
@@ -49,20 +51,27 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
             int slotY = baseY + (i * 20);
             int upY = slotY + 1;
             int downY = slotY + 10;
+            int removeY = slotY + 5;
 
-            boolean upHovered = mouseX >= baseX && mouseX < baseX + 10 && mouseY >= upY && mouseY < upY + 8;
-            boolean downHovered = mouseX >= baseX && mouseX < baseX + 10 && mouseY >= downY && mouseY < downY + 8;
+            boolean upHovered = mouseX >= baseX && mouseX < baseX + 9 && mouseY >= upY && mouseY < upY + 8;
+            boolean downHovered = mouseX >= baseX && mouseX < baseX + 9 && mouseY >= downY && mouseY < downY + 8;
+            boolean removeHovered = mouseX >= removeX && mouseX < removeX + 9 && mouseY >= removeY && mouseY < removeY + 9;
 
             int upColor = (realIndex > 0) ? (upHovered ? 0xFFFFAA00 : 0xFFFFFFFF) : 0x55888888;
             int downColor = (realIndex < offers.size() - 1) ? (downHovered ? 0xFFFFAA00 : 0xFFFFFFFF) : 0x55888888;
+            int removeColor = removeHovered ? 0xFFFF3333 : 0xFFAAAA66;
 
+            // Render Up/Down Arrows
             graphics.text(font, "▲", baseX, upY, upColor, false);
             graphics.text(font, "▼", baseX, downY, downColor, false);
+
+            // Render Trade Removal Button (✕)
+            graphics.text(font, "✕", removeX, removeY, removeColor, false);
         }
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void handleTradeArrowClick(MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
+    private void handleTradeControlClick(MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
         if (event.button() != 0) return;
 
         MerchantOffers offers = this.menu.getOffers();
@@ -71,6 +80,7 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
         double mouseX = event.x();
         double mouseY = event.y();
         int baseX = this.leftPos + 95;
+        int removeX = this.leftPos + 105;
         int baseY = this.topPos + 16;
 
         for (int i = 0; i < 7; i++) {
@@ -80,8 +90,10 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
             int slotY = baseY + (i * 20);
             int upY = slotY + 1;
             int downY = slotY + 10;
+            int removeY = slotY + 5;
 
-            if (mouseX >= baseX && mouseX < baseX + 10) {
+            // Check Up/Down arrows
+            if (mouseX >= baseX && mouseX < baseX + 9) {
                 if (mouseY >= upY && mouseY < upY + 8) {
                     if (realIndex > 0) {
                         ClientPlayNetworking.send(new MoveTradePayload(realIndex, false));
@@ -95,6 +107,13 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
                         return;
                     }
                 }
+            }
+
+            // Check Removal button (✕)
+            if (mouseX >= removeX && mouseX < removeX + 9 && mouseY >= removeY && mouseY < removeY + 9) {
+                ClientPlayNetworking.send(new RemoveTradePayload(realIndex));
+                cir.setReturnValue(true);
+                return;
             }
         }
     }

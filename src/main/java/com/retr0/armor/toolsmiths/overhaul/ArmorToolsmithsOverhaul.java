@@ -1,6 +1,7 @@
 package com.retr0.armor.toolsmiths.overhaul;
 
 import com.retr0.armor.toolsmiths.overhaul.network.MoveTradePayload;
+import com.retr0.armor.toolsmiths.overhaul.network.RemoveTradePayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -20,8 +21,9 @@ public class ArmorToolsmithsOverhaul implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("Armor & Toolsmiths Overhaul Initialized!");
 
-		// Register C2S network payload for play phase
+		// Register C2S network payloads for play phase
 		PayloadTypeRegistry.serverboundPlay().register(MoveTradePayload.ID, MoveTradePayload.STREAM_CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(RemoveTradePayload.ID, RemoveTradePayload.STREAM_CODEC);
 
 		// Handle C2S trade position move requests on the server
 		ServerPlayNetworking.registerGlobalReceiver(MoveTradePayload.ID, (payload, context) -> {
@@ -34,6 +36,29 @@ public class ArmorToolsmithsOverhaul implements ModInitializer {
 					MerchantOffer offer = offers.remove(index);
 					int targetIndex = payload.moveDown() ? Math.min(offers.size(), index + 1) : Math.max(0, index - 1);
 					offers.add(targetIndex, offer);
+
+					menu.setOffers(offers);
+					player.sendMerchantOffers(
+							menu.containerId,
+							offers,
+							menu.getTraderLevel(),
+							menu.getTraderXp(),
+							menu.showProgressBar(),
+							menu.canRestock()
+					);
+				}
+			}
+		});
+
+		// Handle C2S trade removal requests on the server
+		ServerPlayNetworking.registerGlobalReceiver(RemoveTradePayload.ID, (payload, context) -> {
+			ServerPlayer player = context.player();
+			if (player.containerMenu instanceof MerchantMenu menu) {
+				MerchantOffers offers = menu.getOffers();
+				int index = payload.tradeIndex();
+
+				if (offers != null && index >= 0 && index < offers.size()) {
+					offers.remove(index);
 
 					menu.setOffers(offers);
 					player.sendMerchantOffers(

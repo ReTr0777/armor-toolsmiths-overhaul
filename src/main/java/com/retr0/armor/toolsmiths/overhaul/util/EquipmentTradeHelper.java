@@ -19,7 +19,7 @@ import java.util.Optional;
 public class EquipmentTradeHelper {
 
     public static boolean isEquipmentForProfession(VillagerProfession profession, ItemStack stack) {
-        if (stack.isEmpty()) return false;
+        if (stack == null || stack.isEmpty()) return false;
 
         Item item = stack.getItem();
         Identifier itemId = BuiltInRegistries.ITEM.getKey(item);
