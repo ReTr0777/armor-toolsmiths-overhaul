@@ -1,5 +1,6 @@
 package com.retr0.armor.toolsmiths.overhaul.util;
 
+import com.retr0.armor.toolsmiths.overhaul.ArmorToolsmithsOverhaul;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -7,10 +8,14 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
@@ -115,6 +120,34 @@ public class EquipmentTradeHelper {
                         .withStyle(ChatFormatting.GOLD, ChatFormatting.ITALIC)
         ));
         stack.set(DataComponents.LORE, lore);
+
+        // Apply attribute boost (+0.5 Armor for armor, +5% Mining Efficiency for tools, +0.5 Attack Damage for weapons)
+        ItemAttributeModifiers currentModifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        String path = itemId != null ? itemId.getPath() : "";
+
+        if (isArmor(path)) {
+            AttributeModifier bonusArmor = new AttributeModifier(
+                    ArmorToolsmithsOverhaul.id("mastercraft_armor"),
+                    0.5D,
+                    AttributeModifier.Operation.ADD_VALUE
+            );
+            stack.set(DataComponents.ATTRIBUTE_MODIFIERS, currentModifiers.withModifierAdded(Attributes.ARMOR, bonusArmor, EquipmentSlotGroup.ARMOR));
+        } else if (isTool(path)) {
+            AttributeModifier bonusMining = new AttributeModifier(
+                    ArmorToolsmithsOverhaul.id("mastercraft_mining"),
+                    0.05D,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE
+            );
+            stack.set(DataComponents.ATTRIBUTE_MODIFIERS, currentModifiers.withModifierAdded(Attributes.MINING_EFFICIENCY, bonusMining, EquipmentSlotGroup.MAINHAND));
+        } else if (isWeapon(path)) {
+            AttributeModifier bonusDamage = new AttributeModifier(
+                    ArmorToolsmithsOverhaul.id("mastercraft_damage"),
+                    0.5D,
+                    AttributeModifier.Operation.ADD_VALUE
+            );
+            stack.set(DataComponents.ATTRIBUTE_MODIFIERS, currentModifiers.withModifierAdded(Attributes.ATTACK_DAMAGE, bonusDamage, EquipmentSlotGroup.MAINHAND));
+        }
     }
 
     public static MerchantOffer createOrderOffer(ItemStack equipmentStack, boolean isMasterVillager) {
@@ -129,7 +162,9 @@ public class EquipmentTradeHelper {
         ItemStack sellStack = equipmentStack.copy();
         sellStack.setCount(1);
 
-        if (isMasterVillager) {
+        // 20% small chance for Master level villagers (Level 5) to produce Mastercraft quality
+        boolean isMastercraft = isMasterVillager && (Math.random() < 0.20D);
+        if (isMastercraft) {
             applyMastercraftQuality(sellStack);
         }
 
