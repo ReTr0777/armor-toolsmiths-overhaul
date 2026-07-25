@@ -28,6 +28,11 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
         super(menu, playerInventory, title);
     }
 
+    @Inject(method = "extractScroller", at = @At("HEAD"), cancellable = true)
+    private void hideScrollbar(GuiGraphicsExtractor graphics, int x, int y, int index, int count, MerchantOffers offers, CallbackInfo ci) {
+        ci.cancel();
+    }
+
     @Inject(method = "extractContents", at = @At("TAIL"))
     private void renderTradeArrows(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         MerchantOffers offers = this.menu.getOffers();
