@@ -1,11 +1,16 @@
 package com.retr0.armor.toolsmiths.overhaul.util;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 
@@ -59,10 +64,26 @@ public class EquipmentTradeHelper {
         return offer.getItemCostA().item().value() == Items.EMERALD;
     }
 
+    public static int getTotalEnchantmentLevels(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return 0;
+        ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        if (enchantments.isEmpty()) return 0;
+
+        int totalLevels = 0;
+        for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
+            totalLevels += entry.getIntValue();
+        }
+        return totalLevels;
+    }
+
     public static MerchantOffer createOrderOffer(ItemStack equipmentStack) {
         Item item = equipmentStack.getItem();
         Item materialItem = getMaterialItem(item);
-        int count = getMaterialCount(item);
+        
+        int baseCount = getBaseMaterialCount(item);
+        int totalEnchantmentLevels = getTotalEnchantmentLevels(equipmentStack);
+        int extraCost = totalEnchantmentLevels * 2;
+        int count = Math.min(64, baseCount + extraCost);
 
         ItemStack sellStack = equipmentStack.copy();
         sellStack.setCount(1);
@@ -120,7 +141,7 @@ public class EquipmentTradeHelper {
         return Items.IRON_INGOT;
     }
 
-    private static int getMaterialCount(Item item) {
+    private static int getBaseMaterialCount(Item item) {
         Identifier id = BuiltInRegistries.ITEM.getKey(item);
         if (id == null) return 3;
         String path = id.getPath();
