@@ -62,14 +62,18 @@ public abstract class VillagerMixin extends AbstractVillager {
                     }
 
                     if (existingIndex != -1) {
-                        // Re-order existing trade
+                        // Re-order existing trade: Standing = Move UP, Sneaking = Move DOWN
                         MerchantOffer existingOffer = offers.remove(existingIndex);
-                        if (existingIndex == 0 && offers.size() > 1) {
-                            // Already at top: shift down to position 1
-                            offers.add(1, existingOffer);
+                        boolean moveDown = player.isSecondaryUseActive() || player.isCrouching();
+
+                        if (moveDown) {
+                            // Move DOWN by 1 position
+                            int targetIndex = Math.min(offers.size(), existingIndex + 1);
+                            offers.add(targetIndex, existingOffer);
                         } else {
-                            // Move to top (position 0)
-                            offers.add(0, existingOffer);
+                            // Move UP by 1 position
+                            int targetIndex = Math.max(0, existingIndex - 1);
+                            offers.add(targetIndex, existingOffer);
                         }
                     } else {
                         // New order offer: add to top of tradelist alongside all previous custom orders
