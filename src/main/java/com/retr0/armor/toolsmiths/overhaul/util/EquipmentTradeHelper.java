@@ -1,19 +1,23 @@
 package com.retr0.armor.toolsmiths.overhaul.util;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 
+import java.util.List;
 import java.util.Optional;
 
 public class EquipmentTradeHelper {
@@ -64,6 +68,23 @@ public class EquipmentTradeHelper {
         return offer.getItemCostA().item().value() == Items.EMERALD;
     }
 
+    public static boolean isCustomPlayerTrade(MerchantOffer offer) {
+        if (offer == null) return false;
+        ItemStack result = offer.getResult();
+        if (result.isEmpty()) return false;
+
+        Item item = result.getItem();
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(item);
+        if (itemId == null) return false;
+        String path = itemId.getPath();
+
+        boolean isEquipment = isArmor(path) || isTool(path) || isWeapon(path) || path.equals("shield");
+        if (!isEquipment) return false;
+
+        // Custom player trades cost raw materials (NOT Emeralds)
+        return offer.getItemCostA().item().value() != Items.EMERALD;
+    }
+
     public static int getTotalEnchantmentLevels(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return 0;
 
@@ -78,7 +99,25 @@ public class EquipmentTradeHelper {
         return totalLevels;
     }
 
-    public static MerchantOffer createOrderOffer(ItemStack equipmentStack) {
+    public static void applyMastercraftQuality(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+
+        // Set custom name: "Mastercrafted <Item Name>" in Gold & Bold
+        Component currentName = stack.getHoverName();
+        Component mastercraftName = Component.literal("Mastercrafted ")
+                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
+                .append(currentName);
+        stack.set(DataComponents.CUSTOM_NAME, mastercraftName);
+
+        // Add lore line in Gold & Italic
+        ItemLore lore = new ItemLore(List.of(
+                Component.literal("Crafted with legendary skill by a Master Smith")
+                        .withStyle(ChatFormatting.GOLD, ChatFormatting.ITALIC)
+        ));
+        stack.set(DataComponents.LORE, lore);
+    }
+
+    public static MerchantOffer createOrderOffer(ItemStack equipmentStack, boolean isMasterVillager) {
         Item item = equipmentStack.getItem();
         Item materialItem = getMaterialItem(item);
         
@@ -89,6 +128,10 @@ public class EquipmentTradeHelper {
 
         ItemStack sellStack = equipmentStack.copy();
         sellStack.setCount(1);
+
+        if (isMasterVillager) {
+            applyMastercraftQuality(sellStack);
+        }
 
         // 12 uses, 10 villager xp, 0.05 price multiplier
         return new MerchantOffer(

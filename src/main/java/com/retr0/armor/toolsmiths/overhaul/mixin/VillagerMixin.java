@@ -76,8 +76,9 @@ public abstract class VillagerMixin extends AbstractVillager {
                             offers.add(targetIndex, existingOffer);
                         }
                     } else {
-                        // New order offer: create copy of item in villager's trade list without consuming held item
-                        MerchantOffer offer = EquipmentTradeHelper.createOrderOffer(heldItem);
+                        // New order offer: Master villagers (Level 5) apply Mastercraft quality to ordered equipment
+                        boolean isMaster = this.getVillagerData().level() >= 5;
+                        MerchantOffer offer = EquipmentTradeHelper.createOrderOffer(heldItem, isMaster);
                         offers.add(0, offer);
                     }
                 }

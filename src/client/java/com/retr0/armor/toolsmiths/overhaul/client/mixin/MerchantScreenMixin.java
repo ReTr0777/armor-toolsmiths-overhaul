@@ -2,6 +2,7 @@ package com.retr0.armor.toolsmiths.overhaul.client.mixin;
 
 import com.retr0.armor.toolsmiths.overhaul.network.MoveTradePayload;
 import com.retr0.armor.toolsmiths.overhaul.network.RemoveTradePayload;
+import com.retr0.armor.toolsmiths.overhaul.util.EquipmentTradeHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -11,6 +12,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -48,6 +50,7 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
             int realIndex = i + this.scrollOff;
             if (realIndex >= offers.size()) break;
 
+            MerchantOffer offer = offers.get(realIndex);
             int slotY = baseY + (i * 20);
             int upY = slotY + 1;
             int downY = slotY + 10;
@@ -55,18 +58,20 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
 
             boolean upHovered = mouseX >= baseX && mouseX < baseX + 8 && mouseY >= upY && mouseY < upY + 8;
             boolean downHovered = mouseX >= baseX && mouseX < baseX + 8 && mouseY >= downY && mouseY < downY + 8;
-            boolean removeHovered = mouseX >= removeX && mouseX < removeX + 8 && mouseY >= removeY && mouseY < removeY + 9;
 
             int upColor = (realIndex > 0) ? (upHovered ? 0xFFFFAA00 : 0xFFFFFFFF) : 0x55888888;
             int downColor = (realIndex < offers.size() - 1) ? (downHovered ? 0xFFFFAA00 : 0xFFFFFFFF) : 0x55888888;
-            int removeColor = removeHovered ? 0xFFFF3333 : 0xFFAAAA66;
 
             // Render Up/Down Arrows
             graphics.text(font, "▲", baseX, upY, upColor, false);
             graphics.text(font, "▼", baseX, downY, downColor, false);
 
-            // Render Trade Removal Button (✕)
-            graphics.text(font, "✕", removeX, removeY, removeColor, false);
+            // Render Trade Removal Button (✕) strictly for custom player order trades
+            if (EquipmentTradeHelper.isCustomPlayerTrade(offer)) {
+                boolean removeHovered = mouseX >= removeX && mouseX < removeX + 8 && mouseY >= removeY && mouseY < removeY + 9;
+                int removeColor = removeHovered ? 0xFFFF3333 : 0xFFAAAA66;
+                graphics.text(font, "✕", removeX, removeY, removeColor, false);
+            }
         }
     }
 
@@ -87,6 +92,7 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
             int realIndex = i + this.scrollOff;
             if (realIndex >= offers.size()) break;
 
+            MerchantOffer offer = offers.get(realIndex);
             int slotY = baseY + (i * 20);
             int upY = slotY + 1;
             int downY = slotY + 10;
@@ -109,11 +115,13 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
                 }
             }
 
-            // Check Removal button (✕)
+            // Check Removal button (✕) strictly for custom player order trades
             if (mouseX >= removeX && mouseX < removeX + 8 && mouseY >= removeY && mouseY < removeY + 9) {
-                ClientPlayNetworking.send(new RemoveTradePayload(realIndex));
-                cir.setReturnValue(true);
-                return;
+                if (EquipmentTradeHelper.isCustomPlayerTrade(offer)) {
+                    ClientPlayNetworking.send(new RemoveTradePayload(realIndex));
+                    cir.setReturnValue(true);
+                    return;
+                }
             }
         }
     }
