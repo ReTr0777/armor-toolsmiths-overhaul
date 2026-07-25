@@ -40,8 +40,8 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
         if (offers == null || offers.isEmpty()) return;
 
         Font font = this.font;
-        int baseX = this.leftPos + 95;
-        int removeX = this.leftPos + 105;
+        int baseX = this.leftPos + 94;
+        int removeX = this.leftPos + 102;
         int baseY = this.topPos + 16;
 
         for (int i = 0; i < 7; i++) {
@@ -53,9 +53,9 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
             int downY = slotY + 10;
             int removeY = slotY + 5;
 
-            boolean upHovered = mouseX >= baseX && mouseX < baseX + 9 && mouseY >= upY && mouseY < upY + 8;
-            boolean downHovered = mouseX >= baseX && mouseX < baseX + 9 && mouseY >= downY && mouseY < downY + 8;
-            boolean removeHovered = mouseX >= removeX && mouseX < removeX + 9 && mouseY >= removeY && mouseY < removeY + 9;
+            boolean upHovered = mouseX >= baseX && mouseX < baseX + 8 && mouseY >= upY && mouseY < upY + 8;
+            boolean downHovered = mouseX >= baseX && mouseX < baseX + 8 && mouseY >= downY && mouseY < downY + 8;
+            boolean removeHovered = mouseX >= removeX && mouseX < removeX + 8 && mouseY >= removeY && mouseY < removeY + 9;
 
             int upColor = (realIndex > 0) ? (upHovered ? 0xFFFFAA00 : 0xFFFFFFFF) : 0x55888888;
             int downColor = (realIndex < offers.size() - 1) ? (downHovered ? 0xFFFFAA00 : 0xFFFFFFFF) : 0x55888888;
@@ -79,8 +79,8 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
 
         double mouseX = event.x();
         double mouseY = event.y();
-        int baseX = this.leftPos + 95;
-        int removeX = this.leftPos + 105;
+        int baseX = this.leftPos + 94;
+        int removeX = this.leftPos + 102;
         int baseY = this.topPos + 16;
 
         for (int i = 0; i < 7; i++) {
@@ -93,7 +93,7 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
             int removeY = slotY + 5;
 
             // Check Up/Down arrows
-            if (mouseX >= baseX && mouseX < baseX + 9) {
+            if (mouseX >= baseX && mouseX < baseX + 8) {
                 if (mouseY >= upY && mouseY < upY + 8) {
                     if (realIndex > 0) {
                         ClientPlayNetworking.send(new MoveTradePayload(realIndex, false));
@@ -110,7 +110,7 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
             }
 
             // Check Removal button (✕)
-            if (mouseX >= removeX && mouseX < removeX + 9 && mouseY >= removeY && mouseY < removeY + 9) {
+            if (mouseX >= removeX && mouseX < removeX + 8 && mouseY >= removeY && mouseY < removeY + 9) {
                 ClientPlayNetworking.send(new RemoveTradePayload(realIndex));
                 cir.setReturnValue(true);
                 return;

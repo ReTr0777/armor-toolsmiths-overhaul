@@ -76,14 +76,9 @@ public abstract class VillagerMixin extends AbstractVillager {
                             offers.add(targetIndex, existingOffer);
                         }
                     } else {
-                        // New order offer: add to top of tradelist alongside all previous custom orders
+                        // New order offer: create copy of item in villager's trade list without consuming held item
                         MerchantOffer offer = EquipmentTradeHelper.createOrderOffer(heldItem);
                         offers.add(0, offer);
-
-                        // Consume 1 item from player unless in Creative
-                        if (!player.getAbilities().instabuild) {
-                            heldItem.shrink(1);
-                        }
                     }
                 }
 
