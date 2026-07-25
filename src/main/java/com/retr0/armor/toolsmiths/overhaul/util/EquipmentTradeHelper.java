@@ -121,33 +121,91 @@ public class EquipmentTradeHelper {
         ));
         stack.set(DataComponents.LORE, lore);
 
-        // Apply attribute boost (+0.5 Armor for armor, +5% Mining Efficiency for tools, +0.5 Attack Damage for weapons)
+        // Apply item-specific Mastercraft attribute boosts
         ItemAttributeModifiers currentModifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
         Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
         String path = itemId != null ? itemId.getPath() : "";
 
-        if (isArmor(path)) {
-            AttributeModifier bonusArmor = new AttributeModifier(
-                    ArmorToolsmithsOverhaul.id("mastercraft_armor"),
-                    0.5D,
-                    AttributeModifier.Operation.ADD_VALUE
-            );
-            stack.set(DataComponents.ATTRIBUTE_MODIFIERS, currentModifiers.withModifierAdded(Attributes.ARMOR, bonusArmor, EquipmentSlotGroup.ARMOR));
-        } else if (isTool(path)) {
-            AttributeModifier bonusMining = new AttributeModifier(
-                    ArmorToolsmithsOverhaul.id("mastercraft_mining"),
-                    0.05D,
-                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE
-            );
-            stack.set(DataComponents.ATTRIBUTE_MODIFIERS, currentModifiers.withModifierAdded(Attributes.MINING_EFFICIENCY, bonusMining, EquipmentSlotGroup.MAINHAND));
-        } else if (isWeapon(path)) {
-            AttributeModifier bonusDamage = new AttributeModifier(
-                    ArmorToolsmithsOverhaul.id("mastercraft_damage"),
-                    0.5D,
-                    AttributeModifier.Operation.ADD_VALUE
-            );
-            stack.set(DataComponents.ATTRIBUTE_MODIFIERS, currentModifiers.withModifierAdded(Attributes.ATTACK_DAMAGE, bonusDamage, EquipmentSlotGroup.MAINHAND));
+        if (path.endsWith("_chestplate")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ARMOR,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_armor"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.ARMOR);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ARMOR_TOUGHNESS,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_toughness"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.ARMOR);
+        } else if (path.endsWith("_leggings")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ARMOR,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_armor"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.ARMOR);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.SNEAKING_SPEED,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_sneak"), 0.03D, AttributeModifier.Operation.ADD_MULTIPLIED_BASE),
+                    EquipmentSlotGroup.ARMOR);
+        } else if (path.endsWith("_helmet")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ARMOR,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_armor"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.ARMOR);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ARMOR_TOUGHNESS,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_toughness"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.ARMOR);
+        } else if (path.endsWith("_boots")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ARMOR,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_armor"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.ARMOR);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.MOVEMENT_SPEED,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_speed"), 0.03D, AttributeModifier.Operation.ADD_MULTIPLIED_BASE),
+                    EquipmentSlotGroup.ARMOR);
+        } else if (path.equals("shield")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ARMOR,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_armor"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.HAND);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.KNOCKBACK_RESISTANCE,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_knockback_res"), 0.10D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.HAND);
+        } else if (path.endsWith("_pickaxe") || path.endsWith("_shovel")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.MINING_EFFICIENCY,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_mining"), 0.05D, AttributeModifier.Operation.ADD_MULTIPLIED_BASE),
+                    EquipmentSlotGroup.MAINHAND);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.BLOCK_INTERACTION_RANGE,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_reach"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.MAINHAND);
+        } else if (path.endsWith("_hoe")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.MINING_EFFICIENCY,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_mining"), 0.05D, AttributeModifier.Operation.ADD_MULTIPLIED_BASE),
+                    EquipmentSlotGroup.MAINHAND);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ENTITY_INTERACTION_RANGE,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_entity_reach"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.MAINHAND);
+        } else if (path.endsWith("_sword")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ATTACK_DAMAGE,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_damage"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.MAINHAND);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ATTACK_SPEED,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_attack_speed"), 0.03D, AttributeModifier.Operation.ADD_MULTIPLIED_BASE),
+                    EquipmentSlotGroup.MAINHAND);
+        } else if (path.endsWith("_axe")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ATTACK_DAMAGE,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_damage"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.MAINHAND);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.MINING_EFFICIENCY,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_mining"), 0.05D, AttributeModifier.Operation.ADD_MULTIPLIED_BASE),
+                    EquipmentSlotGroup.MAINHAND);
+        } else if (path.equals("bow") || path.equals("crossbow") || path.equals("trident")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ATTACK_DAMAGE,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_damage"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.MAINHAND);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ENTITY_INTERACTION_RANGE,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_entity_reach"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.MAINHAND);
+        } else if (path.equals("mace")) {
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ATTACK_DAMAGE,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_damage"), 0.5D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.MAINHAND);
+            currentModifiers = currentModifiers.withModifierAdded(Attributes.ATTACK_KNOCKBACK,
+                    new AttributeModifier(ArmorToolsmithsOverhaul.id("mastercraft_knockback"), 0.2D, AttributeModifier.Operation.ADD_VALUE),
+                    EquipmentSlotGroup.MAINHAND);
         }
+
+        stack.set(DataComponents.ATTRIBUTE_MODIFIERS, currentModifiers);
     }
 
     public static MerchantOffer createOrderOffer(ItemStack equipmentStack, boolean isMasterVillager) {
