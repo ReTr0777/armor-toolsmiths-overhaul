@@ -110,6 +110,29 @@ public abstract class MerchantScreenMixin extends AbstractContainerScreen<Mercha
         if (!isSmithScreen()) return;
 
         MerchantOffers offers = this.menu.getOffers();
+
+        boolean hasCustomTrade = false;
+        if (offers != null) {
+            for (MerchantOffer offer : offers) {
+                if (EquipmentTradeHelper.isCustomPlayerTrade(offer)) {
+                    hasCustomTrade = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasCustomTrade) {
+            for (net.minecraft.client.gui.components.events.GuiEventListener listener : net.fabricmc.fabric.api.client.screen.v1.Screens.getWidgets(this)) {
+                if (listener.getClass().getSimpleName().equals("CycleTradesButton")) {
+                    if (listener instanceof net.minecraft.client.gui.components.AbstractWidget widget) {
+                        if (widget.visible) {
+                            widget.visible = false;
+                            widget.active = false;
+                        }
+                    }
+                }
+            }
+        }
         if (offers != null && !offers.isEmpty()) {
             Font font = this.font;
             int baseX = this.leftPos + 94;

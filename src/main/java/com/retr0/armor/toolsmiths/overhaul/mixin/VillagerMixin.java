@@ -78,8 +78,30 @@ public abstract class VillagerMixin extends AbstractVillager {
                     }
 
                     if (hasCustomTrade) {
-                        this.setTradingPlayer(player);
-                        this.openTradingScreen(player, this.getDisplayName(), this.getVillagerData().level());
+                        net.minecraft.world.SimpleContainer container = new net.minecraft.world.SimpleContainer(18);
+                        java.util.List<Integer> tradeIndexes = new java.util.ArrayList<>();
+                        int slot = 0;
+                        for (int i = 0; i < offers.size(); i++) {
+                            MerchantOffer offer = offers.get(i);
+                            if (EquipmentTradeHelper.isCustomPlayerTrade(offer)) {
+                                ItemStack result = offer.getResult().copy();
+                                net.minecraft.world.item.component.ItemLore lore = result.getOrDefault(net.minecraft.core.component.DataComponents.LORE, net.minecraft.world.item.component.ItemLore.EMPTY);
+                                java.util.List<net.minecraft.network.chat.Component> newLoreLines = new java.util.ArrayList<>(lore.lines());
+                                newLoreLines.add(net.minecraft.network.chat.Component.literal(""));
+                                newLoreLines.add(net.minecraft.network.chat.Component.literal("Click to delete this trade").withStyle(net.minecraft.ChatFormatting.RED, net.minecraft.ChatFormatting.ITALIC));
+                                result.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(newLoreLines));
+                                
+                                container.setItem(slot++, result);
+                                tradeIndexes.add(i);
+                                if (slot >= 18) break;
+                            }
+                        }
+
+                        Villager self = (Villager) (Object) this;
+                        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                            (containerId, playerInventory, p) -> new com.retr0.armor.toolsmiths.overhaul.menu.DeleteTradeMenu(containerId, playerInventory, container, self, tradeIndexes),
+                            net.minecraft.network.chat.Component.literal("Select Trade to Delete")
+                        ));
                     } else {
                         this.playSound(SoundEvents.VILLAGER_NO, 1.0F, 1.0F);
                     }
@@ -138,11 +160,9 @@ public abstract class VillagerMixin extends AbstractVillager {
                         );
                     }
 
-                    // Open trading UI for player
                     this.setTradingPlayer(player);
                     this.openTradingScreen(player, this.getDisplayName(), this.getVillagerData().level());
                 }
-
                 cir.setReturnValue(InteractionResult.SUCCESS);
                 return;
             }
