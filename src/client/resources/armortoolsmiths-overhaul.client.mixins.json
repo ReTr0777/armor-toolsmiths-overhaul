@@ -4,7 +4,8 @@
 	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"ExampleClientMixin",
-		"MerchantScreenMixin"
+		"MerchantScreenMixin",
+		"ItemStackMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

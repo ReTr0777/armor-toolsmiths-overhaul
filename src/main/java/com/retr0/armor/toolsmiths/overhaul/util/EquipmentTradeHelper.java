@@ -21,11 +21,74 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
 
 import java.util.List;
 import java.util.Optional;
 
 public class EquipmentTradeHelper {
+
+    public static boolean isSmithProfession(VillagerProfession profession) {
+        if (profession == null) return false;
+        Identifier professionId = BuiltInRegistries.VILLAGER_PROFESSION.getKey(profession);
+        if (professionId == null) return false;
+        String profName = professionId.getPath();
+        return "armorer".equals(profName) || "toolsmith".equals(profName) || "weaponsmith".equals(profName);
+    }
+
+    public static void addStarterSmithTrades(VillagerProfession profession, MerchantOffers offers) {
+        if (profession == null || offers == null) return;
+
+        Identifier professionId = BuiltInRegistries.VILLAGER_PROFESSION.getKey(profession);
+        if (professionId == null) return;
+        String profName = professionId.getPath();
+
+        // 15 Coal -> 1 Emerald
+        MerchantOffer coalTrade = new MerchantOffer(
+                new ItemCost(Items.COAL, 15),
+                Optional.empty(),
+                new ItemStack(Items.EMERALD, 1),
+                16,
+                2,
+                0.05f
+        );
+        offers.add(coalTrade);
+
+        if ("armorer".equals(profName)) {
+            // 5 Iron Ingots -> 1 Emerald
+            MerchantOffer ironTrade = new MerchantOffer(
+                    new ItemCost(Items.IRON_INGOT, 5),
+                    Optional.empty(),
+                    new ItemStack(Items.EMERALD, 1),
+                    12,
+                    2,
+                    0.05f
+            );
+            offers.add(ironTrade);
+        } else if ("toolsmith".equals(profName)) {
+            // 24 Flint -> 1 Emerald
+            MerchantOffer flintTrade = new MerchantOffer(
+                    new ItemCost(Items.FLINT, 24),
+                    Optional.empty(),
+                    new ItemStack(Items.EMERALD, 1),
+                    12,
+                    2,
+                    0.05f
+            );
+            offers.add(flintTrade);
+        } else if ("weaponsmith".equals(profName)) {
+            // 4 Iron Ingots -> 1 Emerald
+            MerchantOffer ironTrade = new MerchantOffer(
+                    new ItemCost(Items.IRON_INGOT, 4),
+                    Optional.empty(),
+                    new ItemStack(Items.EMERALD, 1),
+                    12,
+                    2,
+                    0.05f
+            );
+            offers.add(ironTrade);
+        }
+    }
 
     public static boolean isEquipmentForProfession(VillagerProfession profession, ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;

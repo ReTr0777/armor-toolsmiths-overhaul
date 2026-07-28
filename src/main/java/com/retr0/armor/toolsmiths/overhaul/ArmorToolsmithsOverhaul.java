@@ -60,6 +60,13 @@ public class ArmorToolsmithsOverhaul implements ModInitializer {
 				if (offers != null && index >= 0 && index < offers.size()) {
 					offers.remove(index);
 
+					player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+							net.minecraft.sounds.SoundEvents.GRINDSTONE_USE, net.minecraft.sounds.SoundSource.NEUTRAL, 1.0F, 1.0F);
+
+					if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+						serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, player.getX(), player.getY() + 1.0D, player.getZ(), 20, 0.4, 0.4, 0.4, 0.05);
+					}
+
 					menu.setOffers(offers);
 					player.sendMerchantOffers(
 							menu.containerId,
