@@ -5,6 +5,9 @@
 	"mixins": [
 		"AbstractVillagerMixin",
 		"ExampleMixin",
+		"MerchantMenuAccessor",
+		"MerchantOfferAccessor",
+		"MerchantResultSlotMixin",
 		"VillagerMixin"
 	],
 	"injectors": {

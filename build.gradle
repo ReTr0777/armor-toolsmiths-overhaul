@@ -1,6 +1,7 @@
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id 'maven-publish'
+	id "com.modrinth.minotaur" version "2.8.7"
 }
 
 version = project.mod_version
@@ -86,3 +87,28 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+def getEnv(String key) {
+	def envFile = file(".env")
+	if (envFile.exists()) {
+		def env = new Properties()
+		envFile.withInputStream { env.load(it) }
+		return env.getProperty(key) ?: System.getenv(key)
+	}
+	return System.getenv(key)
+}
+
+modrinth {
+	token = getEnv("MODRINTH_TOKEN")
+	projectId = "armor-toolsmiths-overhaul" // Replace with your actual Modrinth project ID or slug
+	versionNumber = project.version
+	versionName = "Armor & Toolsmiths Overhaul v${project.version}"
+	versionType = "release" // Can be "release", "beta", or "alpha"
+	uploadFile = tasks.jar // Target the jar task directly (contains remapped output in modern Loom)
+	gameVersions = [project.minecraft_version] // Supported game versions
+	loaders = ["fabric"]
+	dependencies {
+		required.project "P7dR8mSH" // Fabric API dependency
+	}
+}
+

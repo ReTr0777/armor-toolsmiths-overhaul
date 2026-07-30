@@ -12,6 +12,9 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.retr0.armor.toolsmiths.overhaul.mixin.MerchantMenuAccessor;
+import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.world.entity.npc.villager.Villager;
 
 public class ArmorToolsmithsOverhaul implements ModInitializer {
 	public static final String MOD_ID = "armortoolsmiths-overhaul";
@@ -38,13 +41,15 @@ public class ArmorToolsmithsOverhaul implements ModInitializer {
 					offers.add(targetIndex, offer);
 
 					menu.setOffers(offers);
+					Merchant merchant = ((MerchantMenuAccessor) menu).getTrader();
+					int level = (merchant instanceof Villager villager) ? villager.getVillagerData().level() : 1;
 					player.sendMerchantOffers(
 							menu.containerId,
 							offers,
-							menu.getTraderLevel(),
-							menu.getTraderXp(),
-							menu.showProgressBar(),
-							menu.canRestock()
+							level,
+							merchant.getVillagerXp(),
+							merchant.showProgressBar(),
+							merchant.canRestock()
 					);
 				}
 			}
@@ -68,13 +73,15 @@ public class ArmorToolsmithsOverhaul implements ModInitializer {
 					}
 
 					menu.setOffers(offers);
+					Merchant merchant = ((MerchantMenuAccessor) menu).getTrader();
+					int level = (merchant instanceof Villager villager) ? villager.getVillagerData().level() : 1;
 					player.sendMerchantOffers(
 							menu.containerId,
 							offers,
-							menu.getTraderLevel(),
-							menu.getTraderXp(),
-							menu.showProgressBar(),
-							menu.canRestock()
+							level,
+							merchant.getVillagerXp(),
+							merchant.showProgressBar(),
+							merchant.canRestock()
 					);
 				}
 			}

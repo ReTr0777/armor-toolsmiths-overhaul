@@ -19,10 +19,14 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.Map;
+import java.util.WeakHashMap;
 
 @Mixin(Villager.class)
 public abstract class VillagerMixin extends AbstractVillager {
@@ -58,15 +62,33 @@ public abstract class VillagerMixin extends AbstractVillager {
 
     @Inject(method = "mobInteract", at = @At("HEAD"), cancellable = true)
     private void handleEquipmentOrder(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
+        if (!this.level().isClientSide()) {
+            Villager self = (Villager) (Object) this;
+            System.out.println("[ATO-DEBUG] Level: " + self.getVillagerData().level() +
+                               ", XP: " + self.getVillagerXp() +
+                               ", Max XP: " + net.minecraft.world.entity.npc.villager.VillagerData.getMaxXpPerLevel(self.getVillagerData().level()) +
+                               ", Trading Player: " + self.getTradingPlayer() +
+                               ", isTrading: " + self.isTrading() +
+                               ", isClient: " + self.level().isClientSide());
+        }
+
         ItemStack heldItem = player.getItemInHand(hand);
         VillagerProfession profession = this.getVillagerData().profession().value();
 
         if (EquipmentTradeHelper.isSmithProfession(profession)) {
+            MerchantOffers offers = null;
+            if (!this.level().isClientSide()) {
+                // Clean up default vanilla trades dynamically on interaction
+                offers = this.getOffers();
+                if (offers != null) {
+                    offers.removeIf(EquipmentTradeHelper::isDefaultEquipmentSellOffer);
+                }
+            }
+
             // Feature 1: Grindstone Respec for Smiths
             // Right-clicking a Smith with a Grindstone opens the trading GUI allowing players to select which trade to delete.
             if (heldItem.is(Items.GRINDSTONE)) {
                 if (!this.level().isClientSide()) {
-                    MerchantOffers offers = this.getOffers();
                     boolean hasCustomTrade = false;
                     if (offers != null) {
                         for (MerchantOffer offer : offers) {
@@ -110,11 +132,53 @@ public abstract class VillagerMixin extends AbstractVillager {
                 return;
             }
 
+            // Feature 1.5: Blueprint Renewal via Paper & Emeralds
+            if (heldItem.is(Items.PAPER)) {
+                if (!this.level().isClientSide()) {
+                    boolean hasCustomTradesToRenew = false;
+                    if (offers != null) {
+                        for (MerchantOffer offer : offers) {
+                            if (EquipmentTradeHelper.isCustomPlayerTrade(offer) && offer.getUses() > 0) {
+                                hasCustomTradesToRenew = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (hasCustomTradesToRenew) {
+                        // Check and consume 1 Paper and 5 Emeralds
+                        if (consumeItem(player, Items.PAPER, 1) && consumeItem(player, Items.EMERALD, 5)) {
+                            // Reset uses of all custom trades
+                            for (MerchantOffer offer : offers) {
+                                if (EquipmentTradeHelper.isCustomPlayerTrade(offer)) {
+                                    ((MerchantOfferAccessor) offer).setUses(0);
+                                }
+                            }
+
+                            // Play effects
+                            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                                    SoundEvents.ANVIL_USE, SoundSource.NEUTRAL, 0.5F, 1.2F);
+                            if (this.level() instanceof ServerLevel serverLevel) {
+                                serverLevel.sendParticles(
+                                    ParticleTypes.HAPPY_VILLAGER,
+                                    this.getX(), this.getY() + 1.0D, this.getZ(),
+                                    10, 0.3, 0.3, 0.3, 0.0
+                                );
+                            }
+                        } else {
+                            this.playSound(SoundEvents.VILLAGER_NO, 1.0F, 1.0F);
+                        }
+                    } else {
+                        this.playSound(SoundEvents.VILLAGER_NO, 1.0F, 1.0F);
+                    }
+                }
+                cir.setReturnValue(InteractionResult.SUCCESS);
+                return;
+            }
+
             // Feature 2: Equipment Order Creation / Re-ordering
             if (EquipmentTradeHelper.isEquipmentForProfession(profession, heldItem)) {
                 if (!this.level().isClientSide()) {
-                    MerchantOffers offers = this.getOffers();
-
                     if (offers != null) {
                         // Remove default emerald equipment trades if any remain
                         offers.removeIf(EquipmentTradeHelper::isDefaultEquipmentSellOffer);
@@ -129,8 +193,9 @@ public abstract class VillagerMixin extends AbstractVillager {
                         }
 
                         if (existingIndex != -1) {
-                            // Re-order existing trade: Standing = Move UP, Sneaking = Move DOWN
                             MerchantOffer existingOffer = offers.remove(existingIndex);
+
+                            // Re-order existing trade: Standing = Move UP, Sneaking = Move DOWN
                             boolean moveDown = player.isSecondaryUseActive() || player.isCrouching();
 
                             if (moveDown) {
@@ -179,11 +244,45 @@ public abstract class VillagerMixin extends AbstractVillager {
         }
     }
 
+    @Unique
+    private boolean consumeItem(Player player, net.minecraft.world.item.Item item, int count) {
+        if (player.isCreative()) {
+            return true;
+        }
+        net.minecraft.world.entity.player.Inventory inventory = player.getInventory();
+        int total = 0;
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (stack.is(item)) {
+                total += stack.getCount();
+            }
+        }
+        if (total < count) return false;
+
+        int remaining = count;
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (stack.is(item)) {
+                int toRemove = Math.min(remaining, stack.getCount());
+                stack.shrink(toRemove);
+                remaining -= toRemove;
+                if (remaining <= 0) break;
+            }
+        }
+        return true;
+    }
+
     /**
      * Triggers a challenge fanfare sound and particle celebration when an Armorer, Toolsmith, or Weaponsmith reaches Level 5 (Master).
      */
     @Inject(method = "setVillagerData", at = @At("HEAD"))
     private void onLevelUpToMaster(VillagerData newVillagerData, CallbackInfo ci) {
+        if (!this.level().isClientSide()) {
+            System.out.println("[ATO-DEBUG] setVillagerData: old level = " + this.getVillagerData().level() +
+                               ", new level = " + newVillagerData.level() +
+                               ", old XP = " + this.getVillagerXp());
+        }
+
         VillagerData currentData = this.getVillagerData();
         VillagerProfession prof = currentData.profession().value();
 
@@ -198,6 +297,34 @@ public abstract class VillagerMixin extends AbstractVillager {
                     serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, this.getX(), this.getY() + 1.0, this.getZ(), 20, 0.5, 0.5, 0.5, 0.1);
                 }
             }
+        }
+    }
+
+    @Unique
+    private final Map<MerchantOffer, Integer> savedCustomUses = new WeakHashMap<>();
+
+    @Inject(method = "restock", at = @At("HEAD"))
+    private void saveCustomTradeUses(CallbackInfo ci) {
+        MerchantOffers offers = this.getOffers();
+        if (offers != null) {
+            for (MerchantOffer offer : offers) {
+                if (EquipmentTradeHelper.isCustomPlayerTrade(offer)) {
+                    savedCustomUses.put(offer, offer.getUses());
+                }
+            }
+        }
+    }
+
+    @Inject(method = "restock", at = @At("TAIL"))
+    private void restoreCustomTradeUses(CallbackInfo ci) {
+        MerchantOffers offers = this.getOffers();
+        if (offers != null) {
+            for (MerchantOffer offer : offers) {
+                if (EquipmentTradeHelper.isCustomPlayerTrade(offer) && savedCustomUses.containsKey(offer)) {
+                    ((MerchantOfferAccessor) offer).setUses(savedCustomUses.get(offer));
+                }
+            }
+            savedCustomUses.clear();
         }
     }
 }

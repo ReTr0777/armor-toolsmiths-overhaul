@@ -315,20 +315,27 @@ public class EquipmentTradeHelper {
         ItemStack sellStack = equipmentStack.copy();
         sellStack.setCount(1);
 
-        // 20% small chance for Master level villagers (Level 5) to produce Mastercraft quality
-        boolean isMastercraft = isMasterVillager && (Math.random() < 0.20D);
-        if (isMastercraft) {
-            applyMastercraftQuality(sellStack);
+        // Tiered catalysts based on total enchantment levels
+        Optional<ItemCost> itemCostB = Optional.empty();
+        if (enchantLevels >= 6) {
+            itemCostB = Optional.of(new ItemCost(Items.GHAST_TEAR, 1));
+        } else if (enchantLevels >= 3) {
+            itemCostB = Optional.of(new ItemCost(Items.AMETHYST_SHARD, 1));
+        } else if (enchantLevels >= 1) {
+            itemCostB = Optional.of(new ItemCost(Items.LAPIS_LAZULI, 2));
         }
 
-        // 12 uses, 10 villager xp, 0.05 price multiplier
+        // No price inflation for non-enchanted items
+        float priceMultiplier = (enchantLevels > 0) ? 0.05f : 0.0f;
+
+        // 6 uses (blueprint stability), 10 villager xp, price multiplier
         return new MerchantOffer(
                 new ItemCost(materialItem, count),
-                Optional.empty(),
+                itemCostB,
                 sellStack,
-                12,
+                6,
                 10,
-                0.05f
+                priceMultiplier
         );
     }
 
@@ -359,6 +366,7 @@ public class EquipmentTradeHelper {
         if (path.contains("diamond")) return Items.DIAMOND;
         if (path.contains("iron")) return Items.IRON_INGOT;
         if (path.contains("golden") || path.contains("gold")) return Items.GOLD_INGOT;
+        if (path.contains("copper")) return Items.COPPER_INGOT;
         if (path.contains("leather")) return Items.LEATHER;
         if (path.contains("chainmail")) return Items.IRON_INGOT;
         if (path.contains("turtle")) return Items.TURTLE_SCUTE;
